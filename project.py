@@ -78,12 +78,17 @@ def process_and_upload(session_id, fps, webhook_url, player, frames):
                         f"```"
                     )
 
+                    file_name = f"{session_id}.mp4"
+
                     embed_payload = {
                         "username": "ULG RolePlay",
                         "embeds": [{
                             "title": "📹 Monitor Clip",
                             "description": description_text,
                             "color": 15822360,  # لون برتقالي أنيق مطابق للتصميم المطلوب
+                            "image": {
+                                "url": f"attachment://{file_name}"
+                            },
                             "footer": {
                                 "text": "ULG RolePlay"
                             },
@@ -92,8 +97,8 @@ def process_and_upload(session_id, fps, webhook_url, player, frames):
                     }
 
                     files = {
-                        "file": (f"{session_id}.mp4", video_file, "video/mp4"),
-                        "payload_json": (None, json.dumps(embed_payload), "application/json")
+                        "payload_json": (None, json.dumps(embed_payload), "application/json"),
+                        "files[0]": (file_name, video_file, "video/mp4")
                     }
 
                     discord_res = requests.post(webhook_url, files=files, timeout=45)
