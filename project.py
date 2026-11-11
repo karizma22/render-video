@@ -6,6 +6,7 @@ import subprocess
 import tempfile
 import shutil
 import threading
+import datetime
 import requests
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
@@ -63,21 +64,30 @@ def process_and_upload(session_id, fps, webhook_url, player, frames):
 
             if webhook_url and webhook_url.startswith("http"):
                 with open(output_mp4, "rb") as video_file:
-                    duration_sec = round(len(frames) / fps, 1)
+                    p_name = player.get('name', 'N/A')
+                    p_account = player.get('account', 'N/A')
+                    p_serial = player.get('serial', 'N/A')
+
+                    description_text = (
+                        f"The clip of player **{p_name}** was saved by the moderation team.\n\n"
+                        f"👤 **Player details**\n"
+                        f"```\n"
+                        f"Name:    {p_name}\n"
+                        f"Account: {p_account}\n"
+                        f"Serial:  {p_serial}\n"
+                        f"```"
+                    )
+
                     embed_payload = {
-                        "username": "AntiCheat Screen Recorder",
+                        "username": "ULG RolePlay",
                         "embeds": [{
-                            "title": f"🎥 ريبلاي شاشة المشتبه به (آخر {duration_sec} ثانية)",
-                            "color": 15158332,
-                            "fields": [
-                                {"name": "Player Name", "value": f"```{player.get('name', 'N/A')}```", "inline": True},
-                                {"name": "IP Address", "value": f"```{player.get('ip', 'N/A')}```", "inline": True},
-                                {"name": "Serial", "value": f"```{player.get('serial', 'N/A')}```", "inline": False},
-                                {"name": "Clip Duration", "value": f"```{duration_sec}s```", "inline": True},
-                                {"name": "Frames Captured", "value": f"```{len(frames)} frames @ {fps} FPS```", "inline": True},
-                                {"name": "Resolution", "value": "```640x480```", "inline": True}
-                            ],
-                            "footer": {"text": "Chicago Roleplay Anti-Cheat"}
+                            "title": "📹 Monitor Clip",
+                            "description": description_text,
+                            "color": 15822360,  # لون برتقالي أنيق مطابق للتصميم المطلوب
+                            "footer": {
+                                "text": "ULG RolePlay"
+                            },
+                            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()
                         }]
                     }
 
@@ -96,6 +106,37 @@ def process_and_upload(session_id, fps, webhook_url, player, frames):
         print(f"[!] Exception during rendering: {e}", flush=True)
 
 class VideoRenderHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header('Content-Type', 'text/html; charset=utf-8')
+        self.end_headers()
+        html = """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>Video Renderer Service</title>
+            <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #f8fafc; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+                .card { background: #1e293b; padding: 2.5rem 3rem; border-radius: 16px; box-shadow: 0 15px 35px rgba(0,0,0,0.5); text-align: center; border: 1px solid #334155; }
+                .badge { display: inline-block; background: #10b981; color: white; padding: 0.35rem 1rem; border-radius: 9999px; font-weight: 700; font-size: 0.85rem; margin-bottom: 1.25rem; letter-spacing: 0.05em; }
+                h1 { margin: 0 0 0.5rem 0; font-size: 1.5rem; color: #ffffff; }
+                p { color: #94a3b8; margin: 0 0 1.25rem 0; font-size: 0.95rem; }
+                code { background: #0f172a; color: #38bdf8; padding: 0.2rem 0.5rem; border-radius: 6px; font-family: monospace; }
+            </style>
+        </head>
+        <body>
+            <div class="card">
+                <div class="badge">● ONLINE</div>
+                <h1>MTA Video Rendering Service</h1>
+                <p>Status: Ready to process replay clips.</p>
+                <small style="color: #64748b;">API Endpoint: <code>/api/render-video</code> [POST]</small>
+            </div>
+        </body>
+        </html>
+        """
+        self.wfile.write(html.strip().encode('utf-8'))
+
     def do_POST(self):
         if self.path == "/api/render-video":
             try:
@@ -112,9 +153,9 @@ class VideoRenderHandler(BaseHTTPRequestHandler):
                     data = {}
 
                 session_id = data.get("sessionId", "clip")
-                fps = int(data.get("fps", 15))
+                fps = int(data.get("fps", 20))
                 if fps < 1:
-                    fps = 15
+                    fps = 20
                 webhook_url = data.get("webhookUrl")
                 raw_player = data.get("playerInfo", {})
                 frames = data.get("frames", [])
